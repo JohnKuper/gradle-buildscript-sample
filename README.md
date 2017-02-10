@@ -1,4 +1,4 @@
-# Sample of Gradle buildscript for supporting different app domains
+## Sample of Gradle buildscript for supporting different app domains
 
 Gradle build script that uses dynamic approach for creating and setup flavors from the configuration map.
 
