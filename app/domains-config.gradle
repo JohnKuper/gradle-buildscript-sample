@@ -12,7 +12,7 @@
 ext.domainsConfig = [
 
         /**
-         * This is base config for Russia cities
+         * This is base config for RU domains
          */
         'androidRu': [
                 appName                           : 'Build script',
