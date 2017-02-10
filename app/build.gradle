@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply from: "domains-config-helper.gradle"
+apply from: "distribution.gradle"
 
 android {
     compileSdkVersion 25
@@ -25,7 +26,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
@@ -33,7 +34,7 @@ android {
 
     sourceSets {
         /**
-         * Adds additional source sets for more convenient work with a specific domain. Without adding it we had to use only more concrete source sets
+         * Adds additional source sets for more convenient work with a specific domain. Without adding it we had to use more concrete source sets
          * with backend name like androidRuDev, androidRuBeta etc. Now we can create package e.g androidRu and use it for all androidRu build variants
          */
         domainsConfig.each { domainName, config ->
@@ -81,6 +82,8 @@ android {
                     if (!backendName.equals("production")) {
                         appName += "-" + backendName.capitalize() + "-" + locale
                         applicationPackage += "." + backendName
+                    } else {
+                        appName += "-" + locale
                     }
 
                     //Change applicationId in order to be able to install all different build variants simultaneously
