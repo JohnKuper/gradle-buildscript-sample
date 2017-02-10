@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply from: "domains-config-helper.gradle"
 
 android {
     compileSdkVersion 25
@@ -9,21 +10,106 @@ android {
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
+
+    def storeFilePath = file("buildscript.jks")
+    signingConfigs {
+        //Creates signing config for release builds using buildscript.jks as a keystore
+        release {
+            storeFile storeFilePath
+            storePassword 'sample'
+            keyAlias 'buildscript'
+            keyPassword 'sample'
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+
+    sourceSets {
+        /**
+         * Adds additional source sets for more convenient work with a specific domain. Without adding it we had to use only more concrete source sets
+         * with backend name like androidRuDev, androidRuBeta etc. Now we can create package e.g androidRu and use it for all androidRu build variants
+         */
+        domainsConfig.each { domainName, config ->
+            getValueFromConfig(config, 'backend').each { backendName, url ->
+                def flavorName = domainName + backendName.capitalize()
+                "$flavorName" {
+                    java.srcDirs += ["src/$domainName/java"]
+                    res.srcDirs += ["src/$domainName/res"]
+                }
+            }
+        }
+    }
+
+    /**
+     * Reads all build variants and changes the name of the final .apk file to the more appropriate one
+     */
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def newName = output.outputFile.name
+            //Replace e.g. app-androidNorthRuDev-debug to app-android-north-ru-dev-debug
+            newName = newName.replace(variant.flavorName, flavorNameMap.get(variant.flavorName))
+
+            //Replace -production-release to the version name
+            if (newName.contains("-production-release")) {
+                newName = newName.replace("-production-release", "-" + versionName);
+            } else {
+                //Adds version name to the non production-release builds
+                newName = newName.replace(variant.buildType.name, variant.buildType.name + "-" + versionName);
+            }
+            output.outputFile = new File(output.outputFile.parent, newName)
+        }
+    }
+
+    //Map for saving more appropriate flavor name that should be used in name of the final .apk file
+    ext.flavorNameMap = [:]
+    productFlavors {
+        domainsConfig.each { domainName, config ->
+            getValueFromConfig(config, 'backend').each { backendName, url ->
+                def flavorName = domainName + backendName.capitalize()
+                //Generating flavors dynamically which can be very useful when it comes to complicated setup
+                "$flavorName" {
+                    def appName = getValueFromConfig(config, 'appName')
+                    def locale = getValueFromConfig(config, 'locale')
+                    def applicationPackage = getValueFromConfig(config, 'packageName')
+                    if (!backendName.equals("production")) {
+                        appName += "-" + backendName.capitalize() + "-" + locale
+                        applicationPackage += "." + backendName
+                    }
+
+                    //Change applicationId in order to be able to install all different build variants simultaneously
+                    applicationId applicationPackage
+                    resValue "string", "app_name", appName
+
+                    //Save domainId + backend name as more readable flavor name into map for future renaming of final .apk file (e.g. android-ru-dev)
+                    //instead of androidRuDev
+                    flavorNameMap.put(flavorName, getValueFromConfig(config, 'domainId').toLowerCase() + "-" + backendName)
+
+                    //Just an example of using different values from the configuration on the fly. This logic can be much more complicated
+                    buildConfigField 'String', 'SESSION_SERVICE_ENDPOINT', '"' + url + '/SessionServices/1_5/"'
+                    buildConfigField 'String', 'ACCOUNT_SERVICE_ENDPOINT', '"' + url + '/AccountServices/1_8/"'
+
+                    buildConfigField 'String', 'DOMAIN_ID', '"' + getValueFromConfig(config, 'domainId') + '"'
+                    buildConfigField 'String', 'COUNTRY_NAME', '"' + getValueFromConfig(config, 'countryName') + '"'
+                    buildConfigField 'String', 'COUNTRY_CALLING_CODE', '"' + getValueFromConfig(config, 'countryCallingCode') + '"'
+                    buildConfigField 'String', 'COUNTY_POPULATION', '"' + getValueFromConfig(config, 'countyPopulation') + '"'
+                    buildConfigField 'String', 'DEFAULT_LOCALE', '"' + locale + '"'
+                    buildConfigField 'String', 'CURRENCY', '"' + getValueFromConfig(config, 'currency') + '"'
+                    buildConfigField 'String', 'COMPANY_NAME', '"' + getValueFromConfig(config, 'companyName') + '"'
+                    buildConfigField 'String', 'HELP_EMAIL_ADDRESS', '"' + getValueFromConfig(config, 'helpEmailAddress') + '"'
+                }
+            }
         }
     }
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
     compile 'com.android.support:appcompat-v7:25.1.0'
-    testCompile 'junit:junit:4.12'
 }

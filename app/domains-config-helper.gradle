@@ -1,0 +1,22 @@
+apply from: "domains-config.gradle"
+
+/**
+ * Helper method for retrieving a specific value from the given configuration. If configuration doesn't contain key, it tries to read value from 'base'
+ * config. If 'base' value doesn't exist or key is missing in config and at the same time this config doesn't provide 'base' value
+ * the exception will be thrown
+ */
+ext.getValueFromConfig = { config, key ->
+    if (config.containsKey(key)) {
+        return config[key]
+    } else {
+        if (config['base']) {
+            if (domainsConfig[config['base']]) {
+                return getValueFromConfig(domainsConfig[config['base']], key)
+            } else {
+                throw new IllegalStateException("Configuration error: '" + config['base'] + "' doesn't exist.")
+            }
+        } else {
+            throw new IllegalStateException("Configuration error: '" + key + "' property is missing from '" + config + "', and has no base configuration set.")
+        }
+    }
+}

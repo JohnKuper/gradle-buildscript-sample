@@ -1,0 +1,77 @@
+
+/*
+        This extra property extension or map contains all different configurations for every domain. On the real project, it's a very common scenario
+        when we have multiple domains with slightly different setup thus this approach can be easily applied to construct very
+        complicated setup using inheritance. Also, it allows dynamically create flavors and add additional tweaks during the parsing.
+
+        Usage:
+                - Set 'base' to inherit parameters from another configuration.
+                - Override any of the values by defining.
+*/
+
+ext.domainsConfig = [
+
+        /**
+         * This is base config for Russia cities
+         */
+        'androidRu': [
+                appName                           : 'Build script',
+                packageName                       : 'com.buildscript.android.ru',
+                domainId                          : 'android-ru',
+                countryName                       : 'Russia',
+                countryCallingCode                : '+7',
+                countyPopulation                  : '140 702 000',
+                locale                            : 'RU',
+                currency                          : 'RUB',
+                backend                           : [
+                        dev                       : 'https://api.dev.android.com',
+                        beta                      : 'https://api.beta.android.com',
+                        production                : 'https://api.prod.android.com',
+                ],
+                companyName                       : 'Google',
+                helpEmailAddress                  : 'buildscriptexample@google.com'
+        ],
+
+        /**
+         * This is inherited from androidRu and overrides packageName, domainId, countryName, countryCallingCode, countyPopulation, locale, currency
+         */
+        'androidUs': [
+                base                              : 'androidRu',
+                packageName                       : 'com.buildscript.android.us',
+                domainId                          : 'android-us',
+                countryName                       : 'United States',
+                countryCallingCode                : '+1',
+                countyPopulation                  : '310 232 863',
+                locale                            : 'US',
+                currency                          : 'USD'
+        ],
+
+        /**
+         * This is special setup for NORTH of Russia. It's inherited from androidRu and overrides packageName, domainId and backend
+         */
+        'androidNorthRu': [
+                base                              : 'androidRu',
+                packageName                       : 'com.buildscript.android.north.ru',
+                domainId                          : 'android-north-ru',
+                backend                           : [
+                        dev                       : 'https://api.dev.north.android.com',
+                        beta                      : 'https://api.beta.north.android.com',
+                        production                : 'https://api.prod.north.android.com',
+                ]
+        ],
+
+        /**
+         * This is special setup for Canada. It's inherited from androidUs and overrides packageName, domainId, currency and backend
+         */
+        'androidCa': [
+                base                              : 'androidUs',
+                packageName                       : 'com.buildscript.android.cad',
+                domainId                          : 'android-ca',
+                currency                          : 'CAD',
+                backend                           : [
+                        dev                       : 'https://api.dev.cad.android.com',
+                        beta                      : 'https://api.beta.cad.android.com',
+                        production                : 'https://api.prod.cad.android.com',
+                ]
+        ]
+]
